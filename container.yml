@@ -1,0 +1,41 @@
+name: singlestagemultijob_$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+
+  - master
+
+  - main
+
+jobs:
+
+  - job: ActivityOnLinux
+
+    pool:
+
+      vmImage: ubuntu-latest
+
+    steps:
+
+      - script: echo "Something"
+
+        displayName: OnelineScript
+
+  - job: ActivityOnWindows
+
+    pool:
+
+      vmImage: windows-latest
+
+    steps:
+
+      - task: PowerShell@2
+
+        inputs:
+
+          targetType: 'inline'
+
+          script: |
+
+            Write-host "Hello World"
+
+    dependsOn: ActivityOnLinux
