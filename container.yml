@@ -11,12 +11,12 @@ jobs:
   - job: ActivityOnLinux
 
     pool:
-
-      vmImage: ubuntu-latest
+      name: Dev
+      #vmImage: ubuntu-latest
 
     steps:
 
-      - script: echo "Something"
+      - script: echo "Something" > /tmp/1.txt
 
         displayName: OnelineScript
 
