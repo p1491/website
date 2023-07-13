@@ -22,7 +22,7 @@ jobs:
 
           command: login
 
-          containerRegistry: dockerhubconnection
+          containerRegistry: docker-hub-test
 
       - task: Docker@2
 
