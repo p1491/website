@@ -8,6 +8,13 @@ pool:
   name: Dev
 
 steps:
+  - script: |
+      sudo apt update -y
+      sudo apt install unzip -y
+      
+
   - task: TerraformInstaller@1
     inputs:
       terraformVersion: '1.5.3'
+  - 
+
