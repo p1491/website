@@ -17,4 +17,4 @@ steps:
     inputs:
       terraformVersion: '1.5.3'
   - script: |
-      echo $(System.DefaultWorkingDirectory)
+      sudo cp /home/praveen14/myagent/_work/_tool/terraform/1.5.3/x64/terraform /usr/bin
