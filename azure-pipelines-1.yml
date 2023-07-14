@@ -16,3 +16,5 @@ steps:
   - task: TerraformInstaller@1
     inputs:
       terraformVersion: '1.5.3'
+  - script: |
+      echo $(System.DefaultWorkingDirectory)
