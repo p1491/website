@@ -1,0 +1,1863 @@
+chmod o+rwx
+users:
+  - name: user1
+    uid: 1001
+    shell: /bin/bash
+  - name: user2
+    uid: 1002
+    shell: /bin/bash
+  - name: user3
+    uid: 1003
+    shell: /bin/bash
+  - name: user4
+    uid: 1004
+    shell: /bin/bash
+  - name: user5
+    uid: 1005
+    shell: /bin/bash
+  - name: user6
+    uid: 1006
+    shell: /bin/bash
+  - name: user7
+    uid: 1007
+    shell: /bin/bash
+  - name: user8
+    uid: 1008
+    shell: /bin/bash
+  - name: user9
+    uid: 1009
+    shell: /bin/bash
+  - name: user10
+    uid: 1010
+    shell: /bin/bash
+
+
+ - name: install apache2
+    apt:
+      name: apache2
+      autoremove: yes
+      purge: yes
+      state: absent
+
+
+
+---
+- name: add content to  a file
+  hosts: web
+  tasks:
+  - name: add content after
+    blockinfile:
+         path: /home/index.html
+         block: |
+           location{
+            this is new to me
+           }
+         insertafter: '^hello world/der;$'
+         marker: ""
+         state: present
+
+
+---
+- name: add content to  a file
+  hosts: web
+  tasks:
+  - name: add content after
+    lineinfile:
+         dest: /home/index.html
+         line: "i am good"
+         insertafter: '^hello'
+         state: present
+
+
+---
+- name: configuring apache2 server
+  hosts: web
+  tasks:
+  - name: install apache2
+    apt:
+      name: apache2
+      state: present
+
+  - name: starte apache
+    service:
+      name: apache2.service
+      enabled: yes
+      state: started
+
+  - name: copy index.html
+    copy:
+      src: files/index.html
+      dest: /var/www/html
+      mode: '0644'
+
+---
+- name: Create file
+  hosts: all
+  tasks:
+  - name: create 1.txt
+    file:
+      path: /home/1.txt
+      state: touch
+      mode: '0644'
+
+  - name: Copy as one.txt
+    command: "cp /home/1.txt /home/one.txt"
+
+
+---
+- name: Adding users
+  hosts: all
+  vars_files:
+    - vars/user.yml
+  tasks:
+  - name: Add user to all system
+    user:
+       name: "{{ item.name }}"
+       uid: "{{ item.uid }}"
+       shell: "{{ item.shell }}"
+    with_items: "{{ users }}"
+
+
+
+---
+- name: Instllation mysql DB
+  hosts: db
+  tasks:
+  - name: Install mysql package
+    package:
+      name: "{{ item }}"
+      state: present
+      update_cache: yes
+    loop:
+      - mysql-server
+      - mysql-client
+      - python3-mysqldb
+      - libmysqlclient-dev
+    become: yes
+
+  - name:  start service
+    service:
+      name: mysql
+      state: started
+      enabled: yes
+
+  - name: Create mysql user
+    mysql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_pass }}"
+        priv: '*.*:ALL'
+        host: '%'
+        state: present
+
+  - name: create database
+    mysql_db:
+       name: "{{ db_name }}"
+       state: present
+
+
+  - name: enable remote login to mysql
+    lineinfile:
+          path: /etc/mysql/mysql.conf.d/mysqld.cnf
+          regexp: '^bind-address'
+          line: 'bind-address = 0.0.0.0'
+          backup: yes
+    notify:
+       - restart mysql
+
+  - name: Install apache2
+    apt:
+       name: apache2
+       state: present
+
+  - name: copy index.html
+    copy:
+       src: files/index.html
+       dest: /var/www/html
+       mode: '0644'
+
+  handlers:
+  - name: restart mysql
+    service:
+       name: mysql
+       state: restarted
+
+
+---
+- name: task1
+  hosts: web
+  gather_facts: true
+  tasks:
+  - name: list all
+    debug:
+      var: ansible_facts
+
+
+---
+- name: use facts
+  hosts: web
+  tasks:
+  - name: print hst facts
+    debug:
+       msg:
+         My machine name is {{ ansible_hostname }}
+         My machine fqdn is {{ ansible_facts['fqdn'] }}
+         my machine ip address is {{ ansible_facts.default_ipv4.address }}
+         my machine ip address is {{ ansible_facts['default_ipv4']['address'] }}
+         my machine gateway address is {{ ansible_facts['default_ipv4']['gateway'] }}
+         my machine netmask is {{ ansible_facts['default_ipv4']['netmask'] }}
+         mount point information is {{ ansible_facts['mounts'] }}
+
+
+---
+- name: testing jinja
+  hosts: server
+  vars:
+      users: [1,2,3,4,5,6,7,8,9]
+  tasks:
+  - name: setting motd for every server
+    template:
+        src: temp/t2.j2
+        dest: /home/1.txt
+        mode: 0755
+
+---
+- name: testing jinja2 templates
+  hosts: server
+  tasks:
+  - name: seeting motd for every server
+    template:
+       src:  temp/one.j2
+       dest: /etc/motd
+       mode: '0755'
+
+{% for user in users %}
+    {{  user }}
+{% endfor %}
+
+users:
+   name: A1
+   surname: A2
+
+
+
+Scanning linux images...
+
+Running kernel seems to be up-to-date.
+
+No services need to be restarted.
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+
+curl -SL https://github.com/docker/compose/releases/download/v2.18.1/docker-compose-linux-x86_64 -o /usr/bin/docker-compose
+ chmod a+x /usr/bin/docker-compose
+ docker-compose
+
+---------------------------------------------------------------------------------------------
+root@master:/etc/ansible/roles/webserver/handlers# ls
+main.yml
+root@master:/etc/ansible/roles/webserver/handlers# cat main.yml
+---
+ 
+- name: restart apache
+  service: name=apache2 state=restarted enabled=yes
+root@master:/etc/ansible/roles/webserver/handlers# cd ..tasks
+bash: cd: ..tasks: No such file or directory
+root@master:/etc/ansible/roles/webserver/handlers# cd ../tasks
+root@master:/etc/ansible/roles/webserver/tasks# ls
+config.yaml  install.yaml  main.yml  service.yaml
+root@master:/etc/ansible/roles/webserver/tasks# cat install.yaml
+---
+- name: Install httpd Package
+  apt: name=apache2 state=latest
+- name: Install php Package
+  apt: name=php state=latest
+- name: Install php-mysql Package
+  apt: name=php-mysql state=latest
+...
+root@master:/etc/ansible/roles/webserver/tasks# cat config.yaml
+---
+- name: Copy httpd configuration file
+  copy: src=httpd.conf dest=/home/
+- name: Copy index.php file
+  copy: src=index.php dest=/var/www/html
+  notify:
+  - restart apache
+...
+root@master:/etc/ansible/roles/webserver/tasks# cat service.yaml
+---
+- name: Start and Enable httpd service
+  service: name=apache2 state=restarted enabled=yes
+ 
+...
+ 
+root@master:/etc/ansible/roles/webserver/tasks# cat main.yml
+---
+# tasks file for webserver
+#
+- import_tasks: install.yaml
+- import_tasks: config.yaml
+- import_tasks: service.yaml
+root@master:/etc/ansible/roles/webserver/tasks#
+
+
+root@master:/etc/ansible/roles/webserver/files# ls
+httpd.conf  index.php
+root@master:/etc/ansible/roles/webserver/files# cat httpd.conf
+root@master:/etc/ansible/roles/webserver/files# cat index.php
+Hello friends
+root@master:/etc/ansible/roles/webserver/files#
+---------------------------------------------------------------------------------------
+[11:44 AM] Ramesh SS KHARAT (Guest)
+
+root@master:/yamls# cat db.yaml
+
+
+---
+
+
+- name: install webserver
+
+
+  hosts: db
+
+
+  roles:
+
+
+    - database
+
+
+root@master:/yamls# cd /etc/ansible/roles/database/
+
+
+root@master:/etc/ansible/roles/database# cd tasks/
+
+
+root@master:/etc/ansible/roles/database/tasks# ls
+
+
+createdb.yaml  install.yaml  main.yml  remotelogin.yaml  service.yaml  usercreation.yaml
+
+
+root@master:/etc/ansible/roles/database/tasks# cat install.yaml
+
+
+---
+
+
+- name: Installing Mysql  and dependencies
+
+
+  package:
+
+
+    name: "{​​​​​{​​​​​ item }​​​​​}​​​​​"
+
+
+    state: present
+
+
+    update_cache: yes
+
+
+  loop:
+
+
+    - mysql-server
+
+
+    - mysql-client
+
+
+    - python3-mysqldb
+
+
+    - libmysqlclient-dev
+
+
+  become: yes
+
+
+root@master:/etc/ansible/roles/database/tasks# cat createdb.yaml
+
+
+- name: creating medium_db
+
+
+  mysql_db:
+
+
+    name: "{​​​​​{​​​​​db_name}​​​​​}​​​​​"
+
+
+    state: present
+
+
+root@master:/etc/ansible/roles/database/tasks# cat remotelogin.yaml
+
+
+- name: Enable remote login to mysql
+
+
+  lineinfile:
+
+
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+
+
+    regexp: '^bind-address'
+
+
+    line: 'bind-address = 0.0.0.0'
+
+
+    backup: yes
+
+
+  notify:
+
+
+    - Restart mysql
+ 
+root@master:/etc/ansible/roles/database/tasks# cat service.yaml
+
+
+- name: start and enable mysql service
+
+
+  service:
+
+
+    name: mysql
+
+
+    state: started
+
+
+    enabled: yes
+
+
+root@master:/etc/ansible/roles/database/tasks# cat usercreation.yaml
+
+
+- name: creating mysql user (medium_post)
+
+
+  mysql_user:
+
+
+    name: "{​​​​​{​​​​​db_user}​​​​​}​​​​​"
+
+
+    password: "{​​​​​{​​​​​db_pass}​​​​​}​​​​​"
+
+
+    priv: '*.*:ALL'
+
+
+    host: '%'
+
+
+    state: present
+
+
+root@master:/etc/ansible/roles/database/tasks# cat main.yml
+
+
+---
+
+
+- import_tasks: install.yaml
+
+
+- import_tasks: service.yaml
+
+
+- import_tasks: createdb.yaml
+
+
+- import_tasks: usercreation.yaml
+
+
+- import_tasks: remotelogin.yaml
+
+
+root@master:/etc/ansible/roles/database/tasks#
+
+
+[11:45 AM] Ramesh SS KHARAT (Guest)
+
+root@master:/etc/ansible/roles/database# cd handlers/
+
+
+root@master:/etc/ansible/roles/database/handlers# ls
+
+
+main.yml
+
+
+root@master:/etc/ansible/roles/database/handlers# cat main.yml
+
+
+- name: Restart mysql
+
+
+  service:
+
+
+    name: mysql
+
+
+    state: restarted
+ 
+root@master:/etc/ansible/roles/database/handlers# cd ../files/
+
+
+root@master:/etc/ansible/roles/database/files# ls
+
+
+root@master:/etc/ansible/roles/database/files# cd ../vars/
+
+
+root@master:/etc/ansible/roles/database/vars# ls
+
+
+main.yml
+
+
+root@master:/etc/ansible/roles/database/vars# cat main.yml
+
+
+db_user: admin
+
+
+db_pass: admin123
+
+
+db_name: cts
+
+
+root@master:/etc/ansible/roles/database/vars#
+---------------------------------------------------
+[11:44 AM] Ramesh SS KHARAT (Guest)
+
+root@master:/yamls# cat db.yaml
+
+
+---
+
+
+- name: install webserver
+
+
+  hosts: db
+
+
+  roles:
+
+
+    - database
+
+
+root@master:/yamls# cd /etc/ansible/roles/database/
+
+
+root@master:/etc/ansible/roles/database# cd tasks/
+
+
+root@master:/etc/ansible/roles/database/tasks# ls
+
+
+createdb.yaml  install.yaml  main.yml  remotelogin.yaml  service.yaml  usercreation.yaml
+
+
+root@master:/etc/ansible/roles/database/tasks# cat install.yaml
+
+
+---
+
+
+- name: Installing Mysql  and dependencies
+
+
+  package:
+
+
+    name: "{​​​​​{​​​​​ item }​​​​​}​​​​​"
+
+
+    state: present
+
+
+    update_cache: yes
+
+
+  loop:
+
+
+    - mysql-server
+
+
+    - mysql-client
+
+
+    - python3-mysqldb
+
+
+    - libmysqlclient-dev
+
+
+  become: yes
+
+
+root@master:/etc/ansible/roles/database/tasks# cat createdb.yaml
+
+
+- name: creating medium_db
+
+
+  mysql_db:
+
+
+    name: "{​​​​​{​​​​​db_name}​​​​​}​​​​​"
+
+
+    state: present
+
+
+root@master:/etc/ansible/roles/database/tasks# cat remotelogin.yaml
+
+
+- name: Enable remote login to mysql
+
+
+  lineinfile:
+
+
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+
+
+    regexp: '^bind-address'
+
+
+    line: 'bind-address = 0.0.0.0'
+
+
+    backup: yes
+
+
+  notify:
+
+
+    - Restart mysql
+ 
+root@master:/etc/ansible/roles/database/tasks# cat service.yaml
+
+
+- name: start and enable mysql service
+
+
+  service:
+
+
+    name: mysql
+
+
+    state: started
+
+
+    enabled: yes
+
+
+root@master:/etc/ansible/roles/database/tasks# cat usercreation.yaml
+
+
+- name: creating mysql user (medium_post)
+
+
+  mysql_user:
+
+
+    name: "{​​​​​{​​​​​db_user}​​​​​}​​​​​"
+
+
+    password: "{​​​​​{​​​​​db_pass}​​​​​}​​​​​"
+
+
+    priv: '*.*:ALL'
+
+
+    host: '%'
+
+
+    state: present
+
+
+root@master:/etc/ansible/roles/database/tasks# cat main.yml
+
+
+---
+
+
+- import_tasks: install.yaml
+
+
+- import_tasks: service.yaml
+
+
+- import_tasks: createdb.yaml
+
+
+- import_tasks: usercreation.yaml
+
+
+- import_tasks: remotelogin.yaml
+
+
+root@master:/etc/ansible/roles/database/tasks#
+
+
+[11:45 AM] Ramesh SS KHARAT (Guest)
+
+root@master:/etc/ansible/roles/database# cd handlers/
+
+
+root@master:/etc/ansible/roles/database/handlers# ls
+
+
+main.yml
+
+
+root@master:/etc/ansible/roles/database/handlers# cat main.yml
+
+
+- name: Restart mysql
+
+
+  service:
+
+
+    name: mysql
+
+
+    state: restarted
+ 
+root@master:/etc/ansible/roles/database/handlers# cd ../files/
+
+
+root@master:/etc/ansible/roles/database/files# ls
+
+
+root@master:/etc/ansible/roles/database/files# cd ../vars/
+
+
+root@master:/etc/ansible/roles/database/vars# ls
+
+
+main.yml
+
+
+root@master:/etc/ansible/roles/database/vars# cat main.yml
+
+
+db_user: admin
+
+
+db_pass: admin123
+
+
+db_name: cts
+
+
+root@master:/etc/ansible/roles/database/vars#
+
+--------------------------------------------------------------------------------------------------------
+
+1. What is meaning Modernisation of application  --- adapting new computing approaches,new language/frameworks, move to cloud
+2. Why Microservices  --  independent scaled to meet application feature/isolated faster deployment
+3. How to Terraform and Ansible is helpful for CICD pipeline --- it helps to create a CI/CD solution within matter of minutes. automates all the infratructure needs like creating new VM'S and ansible helps in configuration
+4. What is the position of Ansible and terraform in CICD pipeline
+5. Best practices for using Ansible and terraform
+terraform
+- follow a standard module structure
+- adopt naming convention
+- use variables
+- expose outputs
+- put static files in seperate directory
+
+ansible best practises
+- use roles to keep playbook well-organized
+- use seperate inventory file for staging and production
+- use version control
+- use comments
+- give variables unique names
+
+
+
+root@vm-0:/data1# cat index.php
+<?php
+$servername = "172.17.0.2";
+
+$username = "root";
+
+$password = "123";
+
+$dbname = "cts";
+ 
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+// Check connection
+if ($conn->connect_error) {​​​​​
+
+  die("Connection failed: " . $conn->connect_error);
+}​​​​​
+$sql = "SELECT firstname, lastname FROM cts1";
+$result = $conn->query($sql);
+if ($result->num_rows > 0) {​​​​​
+  // output data of each row
+  while($row = $result->fetch_assoc()) {​​​​​
+    echo " Name: " . $row["firstname"]. " " . $row["lastname"]. "<br>";
+  }​​​​​
+}​​​​​ else {​​​​​
+  echo "0 results";
+}​​​​​
+$conn->close();
+?>
+
+
+alter user 'root'@'localhost' identified with mysql_native_password by '123';
+alter user 'root'@'%' identified with mysql_native_password by '123';
+
+
+ 63  # docker build . -f db.df -t database:v1.0
+   64  # docker volume create v1
+   65  # docker run -d --name=database -e MYSQL_ROOT_PASSWORD=123 -v v1:/var/lib/mysql -p 3307:3306 database:v1.0
+   66  history
+
+ 68  cat webserver.df    69  
+ 68  cat webserver.df
+   69  # build the images
+   70  # mkdir -p /data1
+   71  # cd /data1
+   72  # touch index.php
+   73  # docker run -d --name=webserver -p 9090:80 -v /data1:/var/www/html webserver:v1.0
+   74  histroy
+   75  history
+
+COPY index.html /usr/local/apache2/htdocs
+root@vm-0:/dockerfiles# cat webserver.df
+FROM centos:7
+RUN yum install httpd -y
+EXPOSE 80
+RUN yum install yum-utils -y
+RUN yum-config-manager --enable remi-php72 -y
+RUN yum install php php-mcrypt php-cli php-gd php-curl php-mysql php-ldap php-zip php-fileinfo -y
+ENTRYPOINT ["httpd","-D","FOREGROUND"]
+root@vm-0:/dockerfiles#
+
+root@vm-0:/data1# cd /dockerfiles/
+root@vm-0:/dockerfiles# ls
+createtable.sql  db.df  insertvalues.sql  webserver.df
+root@vm-0:/dockerfiles# cat createtable.sql
+create table cts1 (firstname varchar(20), lastname varchar(20));
+create table cts2 (firstname varchar(20), lastname varchar(20));
+ 
+root@vm-0:/dockerfiles# cat insertvalues.sql
+insert into cts1 values ('A1', 'k1');
+insert into cts1 values ('A2', 'k2');
+insert into cts1 values ('A4', 'k3');
+insert into cts1 values ('A4', 'k4');
+insert into cts2 values ('A4', 'k4');
+ 
+root@vm-0:/dockerfiles# cat db.df
+FROM mysql
+ENV MYSQL_DATABASE=cts
+COPY ./createtable.sql /docker-entrypoint-initdb.d/
+COPY ./insertvalues.sql /docker-entrypoint-initdb.d/
+root@vm-0:/dockerfiles#
+
+172.17.0.0/16"
+docker network create --subnet=10.0.0.16/24 --driver=bridge net1
+
+docker run -d --name=n2 --network net1 --ip=99.99.99.3 --cpus="0.0000001" --memory=18M --hostname=db2.com -p 9091:80 httpd
+
+dockerfiles# docker run -d --name=db1 --network=net1 --ip=10.0.0.4 --cpus="0.0000001" --memory=18M --hostname=db2.com -v vol1:/var/lib/mysql -p 3307:3306 dbserver:v1.0
+
+docker run -d --name=database -e MYSQL_ROOT_PASSWORD=123 -v v1:/var/lib/mysql -p 3307:3306 database:v1.0
+
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+ kubectl expose deploy/httpd --name=httpd-lb1 --type=LoadBalancer --t
+
+
+version: "3.9"
+services:
+   webserver:
+       build :
+         context: .
+         dockerfile: ./web.df
+       container_name: web6
+       ports:
+       - "9090:80"
+       volumes:
+       - "/data:/var/www/html"
+       depends_on:
+       - database
+   database:
+      build:
+       context: .
+       dockerfile: ./db.df
+      container_name: db3
+      ports:
+      - "3307:3306"
+      environment:
+      - MYSQL_ROOT_PASSWORD=123
+      volumes:
+      - "v2:/var/lib/mysql"
+
+volumes:
+    v2:
+
+
+root@vm-0:/data1# cd /dockerfiles/
+root@vm-0:/dockerfiles# ls
+createtable.sql  db.df  insertvalues.sql  webserver.df
+root@vm-0:/dockerfiles# cat createtable.sql
+create table cts1 (firstname varchar(20), lastname varchar(20));
+create table cts2 (firstname varchar(20), lastname varchar(20));
+ 
+root@vm-0:/dockerfiles# cat insertvalues.sql
+insert into cts1 values ('A1', 'k1');
+insert into cts1 values ('A2', 'k2');
+insert into cts1 values ('A4', 'k3');
+insert into cts1 values ('A4', 'k4');
+insert into cts2 values ('A4', 'k4');
+ 
+root@vm-0:/dockerfiles# cat db.df
+FROM mysql
+ENV MYSQL_DATABASE=cts
+COPY ./createtable.sql /docker-entrypoint-initdb.d/
+COPY ./insertvalues.sql /docker-entrypoint-initdb.d/
+root@vm-0:/dockerfiles#
+
+
+docker-compose -f php.yml up -d
+docker-compose -f php.yml stop container_name
+docker-compose -f php.yml rm container_name
+
+
+<?php
+$servername = "database";
+$username = "root";
+$password = "123";
+$dbname = "cts";
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+// Check connection
+if ($conn->connect_error) {
+  die("Connection failed: " . $conn->connect_error);
+}
+
+$sql = "SELECT firstname, lastname FROM cts1";
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+  // output data of each row
+  while($row = $result->fetch_assoc()) {
+    echo  "Name: " . $row["firstname"]. " " . $row["lastname"]. "<br>";
+  }
+} else {
+  echo "0 results";
+}
+$conn->close();
+?>
+
+kube proxy --- to communicate with container from outside the cluster
+kubelet ---- linux daemon on worker node.-> gives config to container engine, and groups these containers get grouped into pod
+avg ~2000 worker nodes in a cluster
+
+45  kubectl create namespace google
+   46  kubectl get ns
+   47  clear
+   48  kubectl run pod1 --image=httpd -n google
+   49  kubectl get pods -n google
+   50  kubectl get pods -n google -o wide
+   51  kubectl run pod2 --image=httpd -n google
+   52  kubectl run pod3 --image=httpd -n google
+   53  kubectl run pod4 --image=httpd -n google
+   54  kubectl run pod5 --image=httpd -n google
+   55  kubectl get pods -n google -o wide
+   56  kubectl describe pod pod1 -n google
+
+image=nginx -n google --dry-run=client -o yaml
+   83  kubectl run p2 --image=nginx -n google --dry-run=client -o yaml > p2.yaml
+   84  ls
+   85  vi p2.yaml
+   86  kubectl create -f p2.yaml
+   87  kubectl get pods -n google
+   88  kubectl delete -f p2.yaml
+   89  kubectl delete -f pod1.yaml
+
+has context menu
+
+image=nginx -n google --dry-run=client -o yaml
+   83  kubectl run p2 --image=nginx -n google --dry-run=client -o yaml > p2.yaml
+   84  ls
+   85  vi p2.yaml
+   86  kubectl create -f p2.yaml
+   87  kubectl get pods -n google
+   88  kubectl delete -f p2.yaml
+   89  kubectl delete -f pod1.yaml
+
+92  kubectl create deployment app1 --image=... by Ramesh SS KHARAT (Guest)
+Ramesh SS KHARAT (Guest)
+11:57 AM
+92  kubectl create deployment app1 --image=httpd -n google
+   93  kubectl delete pod app1-d7f7b5d6f-xrs4g -n google
+   94  kubectl delete pod app1-d7f7b5d6f-wjq5z -n google
+   95  kubectl scale deployment/app1 --replicas=3 -n google
+   96  kubectl scale deployment/app1 --replicas=11 -n google
+   97  kubectl scale deployment/app1 --replicas=51 -n google
+   98  kubectl scale deployment/app1 --replicas=3 -n google
+   99  kubectl delete pod app1-d7f7b5d6f-v2pzg -n google
+
+has context menu
+
+kubectl explain pod gives apiVersion
+
+
+[11:01 AM] Ramesh SS KHARAT (Guest)
+
+ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+kubectl expose pod/pod1 --type=LoadBalancer --port=80 
+
+
+[10:38 AM] Ramesh SS KHARAT (Guest)
+
+root@vm1:/yamls# cat pvc1.yaml
+
+
+apiVersion: v1
+
+
+kind: PersistentVolumeClaim
+
+
+metadata:
+
+
+  name: pvc1
+
+
+spec:
+
+
+  accessModes:
+
+
+  - ReadWriteOnce
+
+
+  storageClassName: managed-premium
+
+
+  resources:
+
+
+    requests:
+
+
+      storage: 3Gi
+
+
+[10:38 AM] Ramesh SS KHARAT (Guest)
+
+root@vm1:/yamls# cat pod1.yaml
+
+
+kind: Pod
+
+
+apiVersion: v1
+
+
+metadata:
+
+
+  name: mypod1
+
+
+spec:
+
+
+  containers:
+
+
+  - name: mypod
+
+
+    image: httpd
+
+
+    resources:
+
+
+      requests:
+
+
+        cpu: 100m
+
+
+        memory: 128Mi
+
+
+      limits:
+
+
+        cpu: 250m
+
+
+        memory: 256Mi
+
+
+    volumeMounts:
+
+
+    - mountPath: "/mnt/azure"
+
+
+      name: v1
+
+
+  volumes:
+
+
+    - name: v1
+
+
+      persistentVolumeClaim:
+
+
+        claimName: pvc1
+
+
+16  mkdir /yamls
+   17  cd /yamls
+   18  touch pvc1.yaml
+   19  vi pvc1.yaml
+   20  kubectl get pvc
+   21  kubectl get pv
+   22  kubectl create -f pvc1.yaml
+   23  kubectl get pvc
+   24  kubectl get pv
+   25  touch pod1.yaml
+   26  vi pod1.yaml
+   27  kubectl get pv
+   28  kubectl get pvc
+   29  kubectl create -f pod1.yaml
+   30  kubectl get pvc
+   31  kubectl get pv
+   32  kubectl get pods
+   33  kubectl exec -it mypod bash
+   34  kubectl delete pod pod1
+   35  kubectl delete pod mypod
+   36  kubectl get pods
+   37  kubectl get pvc
+   38  kubectl get pv
+   39  vi pod1.yaml
+   40  kubectl create -f pod1.yaml
+   41  kubectl get pod
+   42  kubectl exec -it mypod1 bash
+   43  clear
+   44  vi pod1.yaml
+   45  vi pvc1.yaml
+   46  kubectl apply -f pvc1.yaml
+   47  kubectl get pvc
+   48  kubectl describe pvc pvc1
+   49  kubectl get pvc
+   50  kubectl edit pvc pvc1
+   51  kubectl get pvc
+   52  kubectl describe pvc pvc1
+   53  history
+   54  cat pvc1.yaml
+   55  cat pod1.yaml
+
+
+pvc2.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc4
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: managed-premium
+  resources:
+    requests:
+      storage: 7Gi
+
+
+root@vm1:/yamls# cat db1.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: s1
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 3306
+  clusterIP: None
+  selector:
+    app: db1
+ 
+...
+---
+ 
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: db1
+  name: db1
+spec:
+  serviceName: "s1"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: db1
+  template:
+    metadata:
+      labels:
+        app: db1
+    spec:
+      containers:
+      - image: mysql
+        name: mysql
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            value: '123'
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100M
+          limits:
+            cpu: 200m
+            memory: 600M
+        volumeMounts:
+        - name: db1v1
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: db1v1
+        persistentVolumeClaim:
+          claimName: pvc4
+
+
+kubectl create secret generic s1 --from-literal=username=test-user --from-literal=password=testP@ssword
+
+kubectl create secret generic s2 --from-literal=MYSQL_USERNAME=root --from-literal=MYSQL_USERNAME=123
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment2
+  labels:
+    app: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.12
+        ports:
+        - containerPort: 80
+      nodeSelector:
+        disk: ssd
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - image: mysql:5.6
+          name: mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: s2
+                  key: MYSQL_ROOT_PASSWORD
+
+kubectl create secret generic s2 --from-literal=MYSQL_USERNAME=root --from-literal=MYSQL_ROOT_PASSWORD=123
+
+kubectl create secret generic s1 --from-literal=username=test-user --from-literal=password=testP@ssword
+
+apiVersion: v1
+data:
+  redis-config: |
+    maxmemory 2mb
+    maxmemory-policy allkeys-lru
+kind: ConfigMap
+metadata:
+  name: cm3
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: redis
+spec:
+  containers:
+  - name: redis
+    image: redis
+    env:
+    - name: MASTER
+      value: "true"
+    ports:
+    - containerPort: 6379
+    resources:
+      limits:
+        cpu: "0.1"
+    volumeMounts:
+    - mountPath: /redis-master-data
+      name: data
+    - mountPath: /redis-master
+      name: config
+  volumes:
+    - name: data
+      emptyDir: {}
+    - name: config
+      configMap:
+        name: cm3
+        items:
+        - key: redis-config
+          path: redis.conf
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cm1
+
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+    env:
+      - name: hostname
+        valueFrom:
+          configMapKeyRef:
+            name: cm1
+            key: dish
+      - name: app1
+        valueFrom:
+          configMapKeyRef:
+            name: cm1
+            key: dish1  
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm1
+data:
+  dish: vadapav
+  dish1: samosa
+
+
+--------------------------------------------------------------------------------------------------------
+
+
+Implement2 : 25th July 
+# Sample project : spring boot java project / python / dotnet with DB
+  Architect complete CICD pipeline using Azure Devops with below   scenarios
+    1. Use terraform to provision infrastructre
+        2. Use Ansible to configure Infrastructure
+        3. Use Azure repos to store source code and pipeline files
+        4. test the code with any testing tool
+        5. scan/review the code -- sonar 
+        6. Use jfrog for storing artifacts
+        7. Dockerfile and the use docker-compose to automate image            creation process --- store images in azure registry 
+        8. Target Deployment -- K8s  -- dev/uat/prod namespaces 
+        9. Deployment strategy : blue green deployment
+        10. Scan the image using security tools 
+        11. Azure Monitor / ELK stack 
+        12. track and monitor progress -- Azureboards
+        13. apply appropriate Branching Policies 
+        14. use only self hosted agents to build and deploy
+        15. use of helm charts for k8s package management
+        16. monitor service traffic using istio
+---------------------------------       
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.12
+        ports:
+        - containerPort: 80
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: disktype
+                operator: In
+                values:
+                - ssd
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx1-deployment
+  labels:
+    app: nginx1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx1
+  template:
+    metadata:
+      labels:
+        app: nginx1
+    spec:
+      containers:
+      - name: nginx1
+        image: nginx:1.12
+        ports:
+        - containerPort: 80
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - nginx
+              topologyKey: kubernetes.io/hostname
+--------------------------------------------------------------------------------------------
+
+root@kube-vm1:~# history
+    1  az login
+    2  apt install azure-cli
+    3  apt update
+    4  apt install azure-cli
+    5  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/releas                                                                             e/stable.txt)/bin/linux/amd64/kubectl"
+    6  chmod a+x kubectl
+    7  cp kubectl /usr/bin
+    8  clear
+    9  az login
+   10  az account set --subscription 6f1a2551-7aa6-472a-90df-8ad429f6035b
+   11  az aks get-credentials --resource-group kube-grp --name kube-vm
+   12  kubectl get nodes
+   13  clear
+   14  vi nodeselector.yml
+   15  kubectl -f nodeselector.yml
+   16  vi new_nodeselector.yml
+   17  vi new_nodeaffinity.yml
+   18  kubectl -f create new_nodeaffinity.yml
+   19  kubectl create -f  new_nodeaffinity.yml
+   20  kubectl get pods
+   21  kubectl get pods -o wide
+   22  kubectl cat -f  new_nodeaffinity.yml
+   23  cat new_nodeaffinity.yml
+   24  kubectl get nodes
+   25  kubectl label nodes aks-agentpool-38127699-vmss000000 app=db1
+   26  kubectl get nodes --show-labels
+   27  clear
+   28  ls
+   29  cat new_nodeaffinity.yml
+   30  vi new_nodeaffinity.yml
+   31  kubectl get deploy
+   32  kubectl delete nginx-deployment
+   33  kubectl delete deploy nginx-deployment
+   34  kubectl create -f new_nodeaffinity.yml
+   35  kubectl get nodes -o wide
+   36  kubectl get pods -o wide
+   37  kubectl scale deployment/nginx-deployment --replicas=10
+   38  kubectl get pods -o wide
+   39  kubectl describe nodes aks-agentpool-38127699-vmss000000 | grep -i taint
+   40  kubectl describe nodes aks-agentpool-38127699-vmss000001 | grep -i taint
+   41  kubectl taint node aks-agentpool-38127699-vmss000000 app=db2:NoExecute
+   42  kubectl describe nodes aks-agentpool-38127699-vmss000000 | grep -i taint
+   43  kubectl taint node aks-agentpool-38127699-vmss000000 app-
+   44  kubectl create deployment app1 --image=nginx --replicas=10
+   45  kubectl get pods
+   46  kubectl get pods -o wide
+   47  kubectl taint node aks-agentpool-38127699-vmss000000 app=db2:NoExecute
+   48  kubectl get pods -o wide
+   49  kubectl taint node aks-agentpool-38127699-vmss000000 app-
+   50  kubectl taint node aks-agentpool-38127699-vmss000000 app=db2:NoSchedule
+   51  vi tolerate_test.yml
+   52  kubectl create -f tolerate_test.yml
+   53  kubectl get pods -o wide
+   54  kubectl get nodes
+   55  kubectl cordon aks-agentpool-38127699-vmss000001
+   56  kubectl get pods nodes
+   57  kubectl get nodes
+   58  kubectl describe aks-agentpool-38127699-vmss000001 | grep -i taint
+   59  kubectl describe nodes aks-agentpool-38127699-vmss000001 | grep -i taint
+   60  kubectl uncordon aks-agentpool-38127699-vmss000001
+   61  history
+
+
+
+24  apt install openjdk-11-jre-headless
+   25  java version
+   26  sudo apt-get install openjdk-11-jdk
+   27  apt-get install openjdk-11-jre
+   28  java -version
+   29  export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+   30  export PATH=$PATH:$JAVA_HOME/bin
+   31  wget https://mirrors.estointernet.in/apache/maven/maven-3/3.6.3/binaries/                                      apache-maven-3.6.3-bin.tar.gz
+   32  tar -xvf apache-maven-3.6.3-bin.tar.gz
+   33  mv apache-maven-3.6.3 /opt/
+   34  M2_HOME='/opt/apache-maven-3.6.3'
+   35  PATH="$M2_HOME/bin:$PATH"
+   36  export PATH
+   37  mvn --version
+
+oot@test:/dockerfile# cat project1.yaml
+version: "3.0"
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend.df
+    container_name: frontend
+    ports:
+    - "9092:9092"
+    depends_on:
+    - db
+    environment:
+    - servername=db
+    - username=postgres
+    - password=1234
+  db:
+    build:
+      context: .
+      dockerfile: ./backend.df
+    container_name: backend
+    ports:
+    - "5432:5432"
+    environment:
+    - POSTGRES_USER=postgres
+    - POSTGRES_PASSWORD=1234
+root@test:/dockerfile# cat backend.df
+FROM postgres
+ENV POSTGRES_DB=empdb
+
+ 
+
+root@test:/dockerfile# cat frontend.df
+FROM openjdk:8-jdk-alpine
+ARG JAR_FILE=*.jar
+COPY ${JAR_FILE} app.jar
+ENTRYPOINT ["java", "-jar", "app.jar"]
+root@test:/dockerfile#
+
+root@test:/k8s# cat backend.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-headless-s1
+  labels:
+   app: project
+spec:
+  ports:
+  - port: 5432
+  clusterIP: None
+  selector:
+    app: project
+...
+---
+
+ 
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: project
+  name: db-sts-postgres
+spec:
+  serviceName: db-headless-s1
+  replicas: 1
+  selector:
+    matchLabels:
+      app: project
+  template:
+    metadata:
+      labels:
+        app: project
+    spec:
+      containers:
+      - image: kharatramesh/vadapavimages:ctsbackend
+        name: backendkb
+        ports:
+        - containerPort: 5432
+        env:
+          - name: POSTGRES_USER
+            value: 'postgres'
+          - name: POSTGRES_PASSWORD
+            value: '1234'
+...
+
+root@test:/k8s# cat frontend-service.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: project1
+  name: cts-frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: project1
+  template:
+    metadata:
+      labels:
+        app: project1
+    spec:
+      containers:
+      - image: kharatramesh/vadapavimages:ctsfrontend
+        name: frontendkb
+        ports:
+        - containerPort: 9092
+        env:
+          - name: servername
+            value: 'db-headless-s1'
+          - name: username
+            value: 'postgres'
+          - name: password
+            value: '1234'
+-----------------------------------------------------
+ [10:24 AM] Ramesh SS KHARAT (Guest)
+
+42  kubectl create secret docker-registry vadapavsecret --docker-server=vadapav.azurecr.io --docker-username=vadapav --docker-password=ZTn+8NqpQ7WHZ/IsFrdV9hwKVFHVg10wJBDm/FEup2+ACRCtLJDt
+
+
+[10:24 AM] Ramesh SS KHARAT (Guest)
+
+kubectl describe secret vadapavsecret
+
+[10:24 AM] Ramesh SS KHARAT (Guest)
+
+kubectl create deployment app1 --image=vadapav.azurecr.io/vadapav:nginx --dry-run=client -o yaml > app1.yaml
+
+[10:24 AM] Ramesh SS KHARAT (Guest)
+
+kubectl create deployment app1 --image=vadapav.azurecr.io/vadapav:nginx --dry-run=client -o yaml > app1.yaml
+
+[10:25 AM] Ramesh SS KHARAT (Guest)
+
+root@vm1:~# cat app1.yaml
+
+apiVersion: apps/v1
+
+kind: Deployment
+
+metadata:
+
+  creationTimestamp: null
+
+  labels:
+
+    app: app1
+
+  name: app1
+
+spec:
+
+  replicas: 3
+
+  selector:
+
+    matchLabels:
+
+      app: app1
+
+  template:
+
+    metadata:
+
+      creationTimestamp: null
+
+      labels:
+
+        app: app1
+
+    spec:
+
+      containers:
+
+      - image: vadapav.azurecr.io/vadapav:nginx
+
+        name: vadapav
+
+      imagePullSecrets:
+
+      - name: vadapavsecret
+
+[10:24 AM] Ramesh SS KHARAT (Guest)
+
+42  kubectl create secret docker-registry vadapavsecret --docker-server=vadapav.azurecr.io --docker-username=vadapav --docker-password=ZTn+8NqpQ7WHZ/IsFrdV9hwKVFHVg10wJBDm/FEup2+ACRCtLJDt
+
+
+[10:24 AM] Ramesh SS KHARAT (Guest)
+
+kubectl describe secret vadapavsecret
+
+
+elm create cts
+apt install tree -y
+tree cts
+cd /cts/templates
+kubectl create deployment app1 --image=httpd --dry-run=client -o yaml > app1.yaml
+kubectl expose deployment app1 --name=app1s1 --type=LoadBalancer --port=80 --dry-run=client -o yaml > app1s1.yaml
+
+ AxWkeXzsGv
+
+cd ..
+root@vm1:~/cts# cat values.yaml
+replicaCount: 3
+image:
+  repository: kharatramesh/vadapavimages:biryani
+
+ 
+
+root@vm1:~/cts/templates# cat app1.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: app1
+  name: app1
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: app1
+  template:
+    metadata:
+      labels:
+        app: app1
+    spec:
+      containers:
+      - image: {{ .Values.image.repository }}
+        name: httpd
+
+---------------------------------------------------------------------------------
+
+
+79  curl -L https://istio.io/downloadIstio | sh -
+   80  ls
+   81  cd istio-1.18.0/
+   82  export PATH=$PWD/bin:$PATH
+   83  pwd
+   84  echo $PATH
+   85  clear
+   86  ls
+   87  istioctl install --set profile=demo -y
+   88  kubectl get ns
+   89  kubectl get all -n istio-system
+   90  kubectl get deployment -n istion-system
+   91  kubectl get deployment -n istio-system
+   92  clear
+   93  kubectl create ns google
+   94  kubectl create ns ibm
+   95  kubectl create deployment app1 --image=httpd -n google
+   96  kubectl create deployment app1 --image=httpd -n ibm
+   97  kubectl get pods -n google
+   98  kubectl get pods -n ibm
+   99  kubectl label namespace google istio-injection=enabled
+  100  kubectl label namespace ibm istio-injection=enabled
+  101  kubectl get pods -n ibm
+  102  kubectl get pods -n google
+  103  kubectl create deployment app2 --image=httpd -n ibm
+  104  watch kubectl get pods -n ibm
+  105  kubectl get pods -n ibm
+  106  kubectl describe pod app2-6bb4d8f696-s64x5 -n ibm
+  107  clear
+  108  kubectl label namespace default istio-injection=enabled
+  109  kubectl get pods
+  110  ls
+  111  cd samples/
+  112  ls
+  113  cd bookinfo
+  114  ls
+  115  cd ..
+  116  kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
+  117  vi samples/bookinfo/platform/kube/bookinfo.yaml
+  118  kubectl get pods
+  119  kubectl get deployments
+  120  kubectl get service
+  121  kubectl expose/deployment productpage-v1 --name=p1v1-lb1 --type=LoadBalancer --port 9080
+  122  kubectl expose/deployment productpage-v1 --name=p1v1-lb1 --type=LoadBalancer --port=9080
+  123  kubectl expose deployment/productpage-v1 --name=p1v1-lb1 --type=LoadBalancer --port=9080
+  124  kubectl get service
+  125  clear
+  126  kubectl apply -f samples/addons
+  127  kubectl get ns
+  128  kubectl get deployment
+  129  kubectl get pods -n istio-system
+  130  kubectl get service -n istio-system
+  131  kubectl expose deployment/kiali --name=kiali-lb1 --type=LoadBalancer --port=20001
+  132  kubectl expose deployment/kiali --name=kiali-lb1 --type=LoadBalancer --port=20001 -n istio-system
+  133  kubectl get service -n istio-system
+
+
+
+session 4 - Pvc
+session 5 - stateful set/ secrets
+session 3 -- rollout/all types of services
+
+
+/usr/local/apache2/htdocs
