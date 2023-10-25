@@ -1,0 +1,66 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger: none
+pool:
+  name: Dev
+
+stages:
+  - stage: javabuild
+    jobs:
+    - job: javabuild
+      continueOnError: false
+      steps:
+        - task: Maven@4
+          inputs:
+            mavenPomFile: 'pom.xml'
+            goals: 'clean install -DskipTests'
+            publishJUnitResults: false
+            javaHomeOption: '/usr/lib/jvm/java-11-openjdk-amd64'
+            jdkUserInputPath: '/usr/lib/jvm/java-11-openjdk-amd64'
+            mavenVersionSelection: 'Path'
+            mavenDirectory: '/usr/share/maven'
+            mavenSetM2Home: true
+            mavenAuthenticateFeed: false
+            effectivePomSkip: false
+            sonarQubeRunAnalysis: false
+          
+        - task: CmdLine@2
+          displayName: copy jar
+          inputs:
+           script: |
+              cp $(Build.SourcesDirectory)/target/*.jar $(Build.SourcesDirectory)
+        
+         
+        - task: DockerCompose@0
+          displayName: Image Build
+          inputs:
+           containerregistrytype: 'Container Registry'
+           dockerRegistryEndpoint: 'azureregistrytest'
+           dockerComposeFile: 'compose.yml'
+           projectName: 
+           qualifyImageNames: false
+           action: 'Run a Docker Compose command'
+           dockerComposeCommand: 'build'
+        
+        - task: DockerCompose@0
+          displayName: Image Push
+          inputs:
+           containerregistrytype: 'Container Registry'
+           dockerRegistryEndpoint: 'azureregistrytest'
+           dockerComposeFile: 'compose.yml'
+           projectName: 
+           qualifyImageNames: false
+           action: 'Run a Docker Compose command'
+           dockerComposeCommand: 'push'
+          
+         
+        - task: PublishBuildArtifacts@1
+          inputs:
+           PathtoPublish: '$(Build.SourcesDirectory)/manifests'
+           ArtifactName: 'drop'
+           publishLocation: 'Container'
+           StoreAsTar: false
+           

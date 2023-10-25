@@ -1,0 +1,29 @@
+pool:
+  name: Dev
+
+stages:
+  - stage: javabuild
+    jobs:
+    - job: javabuild
+      continueOnError: false
+      steps:          
+      
+        - task: Maven@4
+          inputs:
+             mavenPomFile: 'pom.xml'
+             goals: 'clean install -DskipTests'
+             publishJUnitResults: false
+             javaHomeOption: '/usr/lib/jvm/java-11-openjdk-amd64'
+             jdkUserInputPath: '/usr/lib/jvm/java-11-openjdk-amd64'
+             mavenVersionSelection: 'Path'
+             mavenDirectory: '/usr/share/maven'
+             mavenSetM2Home: true
+             mavenAuthenticateFeed: false
+             effectivePomSkip: false
+             sonarQubeRunAnalysis: false
+             checkStyleRunAnalysis: true
+             pmdRunAnalysis: true
+             
+        
+        
+    

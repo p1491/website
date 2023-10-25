@@ -1,0 +1,25 @@
+version: "3.0"
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend.df
+    image: testreg14.azurecr.io/testreg14:frontend
+    ports:
+    - "9092:9092"
+    depends_on:
+    - backend
+    environment:
+    - servername=backend
+    - username=postgres
+    - password=1234
+  backend:
+    build:
+      context: .
+      dockerfile: ./backend.df
+    image: testreg14.azurecr.io/testreg14:backend
+    ports:
+    - "5432:5432"
+    environment:
+    - POSTGRES_USER=postgres
+    - POSTGRES_PASSWORD=1234

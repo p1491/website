@@ -1,0 +1,45 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-headless-s1
+  labels:
+   app: project
+spec:
+  ports:
+  - port: 5432
+  clusterIP: None
+  selector:
+    app: project
+...
+---
+
+
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: project
+  name: db-sts-postgres
+spec:
+  serviceName: db-headless-s1
+  replicas: 1
+  selector:
+    matchLabels:
+      app: project
+  template:
+    metadata:
+      labels:
+        app: project
+    spec:
+      containers:
+      - image: testreg14.azurecr.io/testreg14:backend
+        name: backend
+        ports:
+        - containerPort: 5432
+        env:
+          - name: POSTGRES_USER
+            value: 'postgres'
+          - name: POSTGRES_PASSWORD
+            value: '1234'

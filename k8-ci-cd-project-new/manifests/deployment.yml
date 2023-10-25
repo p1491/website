@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: project
+  name: cts-frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: project
+  template:
+    metadata:
+      labels:
+        app: project
+    spec:
+      containers:
+      - image: testreg14.azurecr.io/testreg14:frontend
+        name: frontend
+        ports:
+        - containerPort: 9092
+        env:
+          - name: servername
+            value: 'db-headless-s1'
+          - name: username
+            value: 'postgres'
+          - name: password
+            value: '1234'

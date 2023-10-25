@@ -1,0 +1,77 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger: none
+pool:
+  name: Dev
+
+stages:
+  - stage: k8sdeploy
+    jobs:
+    - job: kubereg
+      continueOnError: false
+      steps:
+      - task: CmdLine@2
+        displayName: Run Maven
+        inputs:
+          script: |
+             mvn clean install -DskipTests
+
+      - task: CopyPublishBuildArtifacts@1
+        displayName: Publish Artifact
+        inputs:
+           CopyRoot: '$(Build.SourcesDirectory)/target'
+           Contents: '*.jar'
+           ArtifactName: 'drop'
+           ArtifactType: 'Container'
+           
+         
+      - task: DownloadPipelineArtifact@2
+        displayName: Download Artifact
+        inputs:
+            buildType: 'current'
+            artifactName: 'drop'
+            targetPath: '$(Build.SourcesDirectory)'
+        
+         
+      - task: DockerCompose@0
+        displayName: docker-compose Image Build
+        inputs:
+           containerregistrytype: 'Container Registry'
+           dockerRegistryEndpoint: 'azureregistrytest'
+           dockerComposeFile: 'compose.yml'
+           projectName: 
+           qualifyImageNames: false
+           action: 'Run a Docker Compose command'
+           dockerComposeCommand: 'build'
+        
+      - task: DockerCompose@0
+        displayName: docker-compose Image Build
+        inputs:
+           containerregistrytype: 'Container Registry'
+           dockerRegistryEndpoint: 'azureregistrytest'
+           dockerComposeFile: 'compose.yml'
+           projectName: 
+           qualifyImageNames: false
+           action: 'Run a Docker Compose command'
+           dockerComposeCommand: 'push'
+      - task: KubernetesManifest@1
+        displayName: Create Secret
+        inputs:
+         action: 'createSecret'
+         connectionType: 'kubernetesServiceConnection'
+         kubernetesServiceConnection: 'kubetest'
+         secretType: 'dockerRegistry'
+         secretName: 'testregauth'
+         dockerRegistryEndpoint: 'azureregistrytest'
+      
+      - task: KubernetesManifest@1
+        displayName: K8S deploy
+        inputs:
+         action: 'deploy'
+         connectionType: 'kubernetesServiceConnection'
+         kubernetesServiceConnection: 'kubetest'
+         manifests: $(Build.SourcesDirectory)/manifests/*
+         imagePullSecrets: 'testregauth'
