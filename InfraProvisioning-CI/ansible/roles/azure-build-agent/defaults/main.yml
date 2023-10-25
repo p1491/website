@@ -1,0 +1,19 @@
+# If vsts_agent_fullurl is set this specific version will be downloaded instead of latest
+# https://vstsagentpackage.azureedge.net/agent/2.129.0/vsts-agent-linux-x64-2.129.0.tar.gz
+vsts_agent_version: "3.220.5"
+vsts_agent_baseurl: "https://vstsagentpackage.azureedge.net/agent"
+vsts_agent_file: "vsts-agent-linux-x64-{{vsts_agent_version}}.tar.gz"
+vsts_agent_fullurl: "{{vsts_agent_baseurl}}/{{vsts_agent_version}}/{{vsts_agent_file}}"
+#vsts_agent_user: "{{ansible_env.USER}}"
+
+vsts_accountname: "Mamtha1689831165865"
+vsts_poolname: "Dev"
+
+vsts_server_url: "https://dev.azure.com/{{vsts_accountname}}"
+vsts_agent_name: "{{ansible_hostname}}"
+vsts_agentfolder: "/home/{{vsts_agent_user}}/agent/"
+vsts_workfolder: "/home/{{vsts_agent_user}}/work/"
+
+vsts_remove: false
+
+  

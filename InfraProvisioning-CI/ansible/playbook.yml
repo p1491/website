@@ -1,0 +1,7 @@
+---
+- name: Configure as self-hosted agent
+  hosts: servers
+  remote_user: ansible
+  roles:
+     - azure-build-agent
+     - azure-deploy-agent

@@ -1,0 +1,46 @@
+---
+- name: create directories
+  file:
+    state: directory
+    path: "{{item}}"
+    owner: "{{vsts_agent_user}}"
+    group: "{{vsts_agent_user}}"
+    mode: 0755
+  with_items:
+    - "{{vsts_agentdeployfolder}}"
+    - "{{vsts_workdeployfolder}}"  
+  become: yes
+  become_user: "{{vsts_agent_user}}"
+
+- name: Downlaod and unzip the tar file
+  unarchive:
+    dest: "{{vsts_agentdeployfolder}}"
+    src: "{{vsts_agent_fullurl}}"
+    remote_src: true
+    owner: "{{vsts_agent_user}}"
+    group: "{{vsts_agent_user}}"
+    creates: "{{vsts_agentdeployfolder}}/config.sh"
+  become: yes
+  become_user: "{{vsts_agent_user}}"
+  
+- name: Configure deploy agent
+  command: "./config.sh --unattended --acceptteeeula --deploymentpool --deploymentpoolname {{vsts_deppoolname}} --agent {{vsts_agent_name}} --url {{vsts_server_url}}  --work {{vsts_workdeployfolder}}  --runasservice --auth PAT --token {{vsts_accesstoken}} --replace;"
+  args:
+    chdir: "{{vsts_agentdeployfolder}}"
+    creates: "{{vsts_agentdeployfolder}}/.agent"
+  become: yes
+  become_user: "{{vsts_agent_user}}"
+
+
+- name: Initial installation of systemd service files and generation of runsvc.sh for deploy agent
+  command: "./svc.sh install"
+  args:
+    chdir: "{{vsts_agentdeployfolder}}"
+  become: true
+
+- name: Enable and start vsts-agent service for deploy agent
+  service:
+    name: vsts.agent.{{vsts_accountname}}.{{vsts_deppoolname}}.{{vsts_agent_name}}.service
+    enabled: yes
+    state: started
+  become: true

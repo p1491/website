@@ -1,0 +1,46 @@
+---
+- name: create directories
+  file:
+    state: directory
+    path: "{{item}}"
+    owner: "{{vsts_agent_user}}"
+    group: "{{vsts_agent_user}}"
+    mode: 0755
+  with_items:
+    - "{{vsts_agentfolder}}"
+    - "{{vsts_workfolder}}"
+  become: yes
+  become_user: "{{vsts_agent_user}}"
+
+- name: Downlaod and unzip the tar file
+  unarchive:
+    dest: "{{vsts_agentfolder}}"
+    src: "{{vsts_agent_fullurl}}"
+    remote_src: true
+    owner: "{{vsts_agent_user}}"
+    group: "{{vsts_agent_user}}"
+    creates: "{{vsts_agentfolder}}/config.sh"
+  become: yes
+  become_user: "{{vsts_agent_user}}"
+  
+- name: Configure vsts-agent
+  command: "./config.sh --unattended --acceptteeeula --url {{vsts_server_url}} --auth PAT --token {{vsts_accesstoken}} --pool '{{vsts_poolname}}' --agent {{vsts_agent_name}} --work {{vsts_workfolder}} --replace"
+  args:
+    chdir: "{{vsts_agentfolder}}"
+    creates: "{{vsts_agentfolder}}/.agent"
+  become: yes
+  become_user: "{{vsts_agent_user}}"
+
+
+- name: Initial installation of systemd service files and generation of runsvc.sh
+  command: "./svc.sh install"
+  args:
+    chdir: "{{vsts_agentfolder}}"
+  become: true
+
+- name: Enable and start vsts-agent service
+  service:
+    name: vsts.agent.{{vsts_accountname}}.{{vsts_poolname}}.{{vsts_agent_name}}.service
+    enabled: yes
+    state: started
+  become: true
